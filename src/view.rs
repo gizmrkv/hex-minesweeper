@@ -12,6 +12,7 @@ pub struct ViewConfig {
     pub tile_gap_scale: f32,
     pub tile_layer: f32,
     pub tile_color: Color,
+    pub tile_edge_color: Color,
     pub tile_text_font_path: String,
     pub tile_text_size: f32,
     pub tile_text_color: Color,
@@ -80,7 +81,10 @@ fn setup_view(
         -Vec3::from((board_center_grid, config.tile_layer)) * config.tile_size;
 
     let tile_mesh = shape::RegularPolygon::new(config.tile_size * config.tile_gap_scale, 6);
+    let tile_edge_mesh =
+        shape::RegularPolygon::new(config.tile_size * (2.0 - config.tile_gap_scale), 6);
     let tile_color_material = ColorMaterial::from(config.tile_color);
+    let tile_edge_color_material = ColorMaterial::from(config.tile_edge_color);
 
     let tile_text_font = asset_server.load(&config.tile_text_font_path);
     let tile_text_style = TextStyle {
@@ -118,6 +122,18 @@ fn setup_view(
                         " ".to_string()
                     };
 
+                    parent.spawn(TileMaterialMeshBundle {
+                        grid: TileHexGrid { grid },
+                        material_mesh: MaterialMesh2dBundle {
+                            transform: Transform::from_translation(Vec3::from((
+                                tile_position,
+                                config.tile_layer,
+                            ))),
+                            mesh: meshes.add(tile_edge_mesh.into()).into(),
+                            material: materials.add(tile_edge_color_material.clone()),
+                            ..Default::default()
+                        },
+                    });
                     let material_mesh_id = parent
                         .spawn(TileMaterialMeshBundle {
                             grid: TileHexGrid { grid },
