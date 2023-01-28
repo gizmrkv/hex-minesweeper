@@ -1,7 +1,7 @@
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::model;
-use bevy::{prelude::*, sprite::Mesh2dHandle};
+use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
 pub struct ViewPlugin;
@@ -15,6 +15,7 @@ pub struct ViewConfig {
     pub tile_text_font_path: String,
     pub tile_text_size: f32,
     pub tile_text_color: Color,
+    pub tile_text_layer: f32,
 }
 
 impl Plugin for ViewPlugin {
@@ -23,17 +24,43 @@ impl Plugin for ViewPlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 struct Tilemap;
 
 #[derive(Resource)]
 struct TileIds {
-    pub ids: HashMap<PointyHexGrid, Entity>,
+    pub material_mesh_ids: HashMap<PointyHexGrid, Entity>,
+    pub text_ids: HashMap<PointyHexGrid, Entity>,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 struct TileHexGrid {
     pub grid: PointyHexGrid,
+}
+
+#[derive(Bundle, Default)]
+struct TilemapBundle {
+    tilemap: Tilemap,
+    transform: Transform,
+    global_transform: GlobalTransform,
+    visibility: Visibility,
+    computed_visibility: ComputedVisibility,
+}
+
+#[derive(Bundle)]
+struct TileMaterialMeshBundle {
+    grid: TileHexGrid,
+
+    #[bundle]
+    material_mesh: MaterialMesh2dBundle<ColorMaterial>,
+}
+
+#[derive(Bundle)]
+struct TileTextBundle {
+    grid: TileHexGrid,
+
+    #[bundle]
+    text: Text2dBundle,
 }
 
 fn setup_view(
@@ -62,15 +89,13 @@ fn setup_view(
         color: config.tile_text_color,
     };
 
-    let mut ids = HashMap::<PointyHexGrid, Entity>::new();
-    let mut tilemap_entity_commands = commands.spawn((
-        Tilemap,
-        Transform::from_translation(tilemap_translation),
-        GlobalTransform::default(),
-        Visibility::VISIBLE,
-        ComputedVisibility::default(),
-    ));
-    let tilemap_entity = tilemap_entity_commands.id();
+    let mut tilemap_entity_commands = commands.spawn(TilemapBundle {
+        transform: Transform::from_translation(tilemap_translation),
+        ..Default::default()
+    });
+
+    let mut material_mesh_ids = HashMap::<PointyHexGrid, Entity>::new();
+    let mut text_ids = HashMap::<PointyHexGrid, Entity>::new();
 
     tilemap_entity_commands.add_children(|parent| {
         for x in 0..(2 * tiles_per_side - 1) {
@@ -90,27 +115,46 @@ fn setup_view(
                     } else if tile_state.is_flag() {
                         "F".to_string()
                     } else {
-                        "".to_string()
+                        " ".to_string()
                     };
 
-                    let id = parent
-                        .spawn((
-                            TileHexGrid { grid },
-                            Transform::from_translation(Vec3::from((tile_position, 0.0))),
-                            Mesh2dHandle::from(meshes.add(tile_mesh.into())),
-                            materials.add(tile_color_material.clone()),
-                            Text::from_section(tile_text, tile_text_style.clone())
-                                .with_alignment(TextAlignment::CENTER),
-                            Visibility::VISIBLE,
-                            GlobalTransform::default(),
-                            ComputedVisibility::default(),
-                        ))
+                    let material_mesh_id = parent
+                        .spawn(TileMaterialMeshBundle {
+                            grid: TileHexGrid { grid },
+                            material_mesh: MaterialMesh2dBundle {
+                                transform: Transform::from_translation(Vec3::from((
+                                    tile_position,
+                                    config.tile_layer,
+                                ))),
+                                mesh: meshes.add(tile_mesh.into()).into(),
+                                material: materials.add(tile_color_material.clone()),
+                                ..Default::default()
+                            },
+                        })
                         .id();
-                    ids.insert(grid, id);
+                    let text_id = parent
+                        .spawn(TileTextBundle {
+                            grid: TileHexGrid { grid },
+                            text: Text2dBundle {
+                                transform: Transform::from_translation(Vec3::from((
+                                    tile_position,
+                                    config.tile_text_layer,
+                                ))),
+                                text: Text::from_section(tile_text, tile_text_style.clone())
+                                    .with_alignment(TextAlignment::CENTER),
+                                ..Default::default()
+                            },
+                        })
+                        .id();
+                    material_mesh_ids.insert(grid, material_mesh_id);
+                    text_ids.insert(grid, text_id);
                 }
             }
         }
     });
 
-    commands.insert_resource(TileIds { ids });
+    commands.insert_resource(TileIds {
+        material_mesh_ids,
+        text_ids,
+    });
 }

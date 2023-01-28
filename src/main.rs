@@ -6,8 +6,6 @@ mod hexgrid;
 mod model;
 mod view;
 
-use std::fs;
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -20,6 +18,7 @@ fn main() {
             tile_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
             tile_text_size: 30.0,
             tile_text_color: Color::rgb(0.1, 0.1, 0.1),
+            tile_text_layer: 1.0,
         })
         .add_plugin(model::ModelPlugin)
         .add_plugin(view::ViewPlugin)
