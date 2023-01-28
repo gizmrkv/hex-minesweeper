@@ -1,6 +1,6 @@
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
-use crate::{model, Config};
+use crate::{model, Config, CursorWorldPosition};
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
@@ -8,7 +8,8 @@ pub struct ViewPlugin;
 
 impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_view);
+        app.add_startup_system(setup_view)
+            .add_system(recolor_tile_selected_system);
     }
 }
 
@@ -25,6 +26,9 @@ struct TileIds {
 struct TileHexGrid {
     pub grid: PointyHexGrid,
 }
+
+#[derive(Component)]
+struct TileEdge;
 
 #[derive(Bundle, Default)]
 struct TilemapBundle {
@@ -109,18 +113,21 @@ fn setup_view(
                         " ".to_string()
                     };
 
-                    parent.spawn(TileMaterialMeshBundle {
-                        grid: TileHexGrid { grid },
-                        material_mesh: MaterialMesh2dBundle {
-                            transform: Transform::from_translation(Vec3::from((
-                                tile_position,
-                                config.tile_layer,
-                            ))),
-                            mesh: meshes.add(tile_edge_mesh.into()).into(),
-                            material: materials.add(tile_edge_color_material.clone()),
-                            ..Default::default()
+                    parent.spawn((
+                        TileEdge,
+                        TileMaterialMeshBundle {
+                            grid: TileHexGrid { grid },
+                            material_mesh: MaterialMesh2dBundle {
+                                transform: Transform::from_translation(Vec3::from((
+                                    tile_position,
+                                    config.tile_edge_layer,
+                                ))),
+                                mesh: meshes.add(tile_edge_mesh.into()).into(),
+                                material: materials.add(tile_edge_color_material.clone()),
+                                ..Default::default()
+                            },
                         },
-                    });
+                    ));
                     let material_mesh_id = parent
                         .spawn(TileMaterialMeshBundle {
                             grid: TileHexGrid { grid },
@@ -160,4 +167,28 @@ fn setup_view(
         material_mesh_ids,
         text_ids,
     });
+}
+
+fn recolor_tile_selected_system(
+    mut tile_color_query: Query<(&TileHexGrid, &mut Handle<ColorMaterial>), Without<TileEdge>>,
+    cursor_world_position: Res<CursorWorldPosition>,
+    tilemap_query: Query<&Transform, With<Tilemap>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    config: Res<Config>,
+) {
+    let tilemap_transform = tilemap_query.single();
+    let cursor_grid = hexgrid::cartesian_point_to_nearest_pointy_hex_grid(
+        (cursor_world_position.position - tilemap_transform.translation.truncate())
+            / config.tile_size,
+    );
+
+    for (tile_grid, color_handle) in &mut tile_color_query {
+        if let Some(color_material) = materials.get_mut(&color_handle) {
+            if tile_grid.grid == cursor_grid {
+                color_material.color = config.tile_selected_color;
+            } else {
+                color_material.color = config.tile_color;
+            }
+        }
+    }
 }
