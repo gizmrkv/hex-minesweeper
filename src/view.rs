@@ -1,23 +1,10 @@
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
-use crate::model;
+use crate::{model, Config};
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
 pub struct ViewPlugin;
-
-#[derive(Resource)]
-pub struct ViewConfig {
-    pub tile_size: f32,
-    pub tile_gap_scale: f32,
-    pub tile_layer: f32,
-    pub tile_color: Color,
-    pub tile_edge_color: Color,
-    pub tile_text_font_path: String,
-    pub tile_text_size: f32,
-    pub tile_text_color: Color,
-    pub tile_text_layer: f32,
-}
 
 impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
@@ -66,7 +53,7 @@ struct TileTextBundle {
 
 fn setup_view(
     mut commands: Commands,
-    config: Res<ViewConfig>,
+    config: Res<Config>,
     game_board: Res<model::GameBoard>,
     asset_server: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
