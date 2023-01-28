@@ -13,7 +13,7 @@ impl Plugin for ViewPlugin {
 }
 
 #[derive(Component, Default)]
-struct Tilemap;
+pub struct Tilemap;
 
 #[derive(Resource)]
 struct TileIds {

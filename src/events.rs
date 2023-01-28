@@ -1,24 +1,31 @@
 use crate::hexgrid::PointyHexGrid;
 use bevy::prelude::*;
 
+#[derive(Debug)]
 pub struct OnTryOpenTile {
-    target: PointyHexGrid,
+    pub target: PointyHexGrid,
 }
 
+#[derive(Debug)]
 pub struct OnTryFlagTile {
-    target: PointyHexGrid,
+    pub target: PointyHexGrid,
 }
 
+#[derive(Debug)]
 pub enum OnMoveTile {
     Open { target: PointyHexGrid },
     Flag { target: PointyHexGrid },
 }
 
+#[derive(Debug)]
 pub struct OnUndoMoveTile;
 
+#[derive(Debug)]
 pub struct OnGameOver;
+#[derive(Debug)]
 pub struct OnGameClear;
 
+#[derive(Debug)]
 pub struct OnQuitGame;
 
 pub struct EventsPlugin;
@@ -31,6 +38,13 @@ impl Plugin for EventsPlugin {
             .add_event::<OnUndoMoveTile>()
             .add_event::<OnGameOver>()
             .add_event::<OnGameClear>()
-            .add_event::<OnQuitGame>();
+            .add_event::<OnQuitGame>()
+            .add_system(info_on_try_open_tile_system);
+    }
+}
+
+fn info_on_try_open_tile_system(mut reader: EventReader<OnTryOpenTile>) {
+    for event in reader.iter() {
+        info!("{:?}", event);
     }
 }

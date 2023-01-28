@@ -1,3 +1,4 @@
+use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 
@@ -22,7 +23,10 @@ pub struct Config {
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(LogPlugin {
+            filter: "info,wgpu_core=warn,wgpu_hal=warn,mygame=debug".into(),
+            level: bevy::log::Level::DEBUG,
+        }))
         .insert_resource(ClearColor(Color::rgb(0.4, 0.4, 0.4)))
         .insert_resource(Config {
             tile_size: 50.0,
