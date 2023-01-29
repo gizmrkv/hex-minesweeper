@@ -72,7 +72,7 @@ impl GameBoard {
 
         for x in 0..(2 * tiles_per_side - 1) {
             for y in 0..(2 * tiles_per_side - 1) {
-                if let Some(mut tile_state) = board.get_mut(PointyHexGrid {
+                if let Some(tile_state) = board.get_mut(PointyHexGrid {
                     x: x as i32,
                     y: y as i32,
                 }) {
@@ -154,37 +154,29 @@ impl GameBoard {
         }
     }
 
-    pub fn try_open_tile(&mut self, grid: hexgrid::PointyHexGrid) -> bool {
-        if let Some(tile_state) = self.get_mut(grid) {
-            if !tile_state.is_open && !tile_state.is_flag {
-                tile_state.is_open = true;
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        }
-    }
-
-    pub fn try_flag_tile(&mut self, grid: hexgrid::PointyHexGrid) -> bool {
-        if let Some(tile_state) = self.get_mut(grid) {
-            if !tile_state.is_open && !tile_state.is_flag {
-                tile_state.is_flag = true;
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        }
-    }
-
     pub fn count_open_tile(&self) -> usize {
         self.board
             .iter()
             .filter(|tile_state| tile_state.is_open)
             .count()
+    }
+
+    pub fn count_mines(&self) -> usize {
+        self.board
+            .iter()
+            .filter(|tile_state| tile_state.is_mine)
+            .count()
+    }
+
+    pub fn count_flagged_mines(&self) -> usize {
+        self.board
+            .iter()
+            .filter(|tile_state| tile_state.is_mine && tile_state.is_flag)
+            .count()
+    }
+
+    pub fn count_remaining_mines(&self) -> usize {
+        self.count_mines() - self.count_flagged_mines()
     }
 }
 
@@ -194,10 +186,13 @@ fn on_try_open_tile_system(
     mut writer: EventWriter<events::OnMoveTile>,
 ) {
     for event in reader.iter() {
-        if game_board.try_open_tile(event.target) {
-            writer.send(events::OnMoveTile::Open {
-                target: event.target,
-            });
+        if let Some(tile_state) = game_board.get_mut(event.target) {
+            if !tile_state.is_open && !tile_state.is_flag {
+                tile_state.is_open = true;
+                writer.send(events::OnMoveTile::Open {
+                    target: event.target,
+                });
+            }
         }
     }
 }
@@ -208,10 +203,13 @@ fn on_try_flag_tile_system(
     mut writer: EventWriter<events::OnMoveTile>,
 ) {
     for event in reader.iter() {
-        if game_board.try_flag_tile(event.target) {
-            writer.send(events::OnMoveTile::Flag {
-                target: event.target,
-            });
+        if let Some(tile_state) = game_board.get_mut(event.target) {
+            if !tile_state.is_open && !tile_state.is_flag {
+                tile_state.is_flag = true;
+                writer.send(events::OnMoveTile::Flag {
+                    target: event.target,
+                });
+            }
         }
     }
 }

@@ -2,7 +2,6 @@ use crate::events::*;
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::{model, Config, CursorWorldPosition};
-use bevy::render::color;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
@@ -103,7 +102,7 @@ fn setup_view(
                     x: x as i32,
                     y: y as i32,
                 };
-                if let Some(tile_state) = game_board.get(grid) {
+                if let Some(_) = game_board.get(grid) {
                     let tile_position =
                         hexgrid::pointy_hex_grid_to_cartesian(grid) * config.tile_size;
                     parent.spawn((
@@ -170,7 +169,7 @@ fn setup_view(
 }
 
 fn recolor_tile_selected_system(
-    mut tile_color_query: Query<(&TileHexGrid, &mut Handle<ColorMaterial>), Without<TileEdge>>,
+    tile_color_query: Query<(&TileHexGrid, &mut Handle<ColorMaterial>), Without<TileEdge>>,
     tilemap_query: Query<&Transform, With<Tilemap>>,
     cursor_world_position: Res<CursorWorldPosition>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -186,7 +185,7 @@ fn recolor_tile_selected_system(
 
     // 色を戻す
     if let Some(grid_entity) = tile_ids.material_mesh_ids.get(&selexted_tile.grid) {
-        if let Ok((tile_grid, color_handle)) = tile_color_query.get(*grid_entity) {
+        if let Ok((_, color_handle)) = tile_color_query.get(*grid_entity) {
             if let Some(color_material) = materials.get_mut(&color_handle) {
                 color_material.color = config.tile_color;
             }
@@ -197,7 +196,7 @@ fn recolor_tile_selected_system(
 
     //色を付ける
     if let Some(grid_entity) = tile_ids.material_mesh_ids.get(&selexted_tile.grid) {
-        if let Ok((tile_grid, color_handle)) = tile_color_query.get(*grid_entity) {
+        if let Ok((_, color_handle)) = tile_color_query.get(*grid_entity) {
             if let Some(color_material) = materials.get_mut(&color_handle) {
                 color_material.color = config.tile_selected_color;
             }
