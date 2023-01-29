@@ -11,8 +11,10 @@ impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SelectedTile::default())
             .add_startup_system(setup_view)
+            .add_startup_system(setup_game_over)
             .add_system(recolor_tile_selected_system)
-            .add_system(on_move_tile_system);
+            .add_system(on_move_tile_system)
+            .add_system(on_game_over);
     }
 }
 
@@ -47,22 +49,6 @@ struct TilemapBundle {
     computed_visibility: ComputedVisibility,
 }
 
-#[derive(Bundle)]
-struct TileMaterialMeshBundle {
-    grid: TileHexGrid,
-
-    #[bundle]
-    material_mesh: MaterialMesh2dBundle<ColorMaterial>,
-}
-
-#[derive(Bundle)]
-struct TileTextBundle {
-    grid: TileHexGrid,
-
-    #[bundle]
-    text: Text2dBundle,
-}
-
 fn setup_view(
     mut commands: Commands,
     config: Res<Config>,
@@ -76,8 +62,7 @@ fn setup_view(
         x: (tiles_per_side - 1) as i32,
         y: (tiles_per_side - 1) as i32,
     });
-    let tilemap_translation =
-        -Vec3::from((board_center_grid, config.tile_layer)) * config.tile_size;
+    let tilemap_translation = -Vec3::from((board_center_grid, 0.0)) * config.tile_size;
 
     let tile_mesh = shape::RegularPolygon::new(config.tile_size * config.tile_gap_scale, 6);
     let tile_edge_mesh =
@@ -107,23 +92,21 @@ fn setup_view(
                         hexgrid::pointy_hex_grid_to_cartesian(grid) * config.tile_size;
                     parent.spawn((
                         TileEdge,
-                        TileMaterialMeshBundle {
-                            grid: TileHexGrid { grid },
-                            material_mesh: MaterialMesh2dBundle {
-                                transform: Transform::from_translation(Vec3::from((
-                                    tile_position,
-                                    config.tile_edge_layer,
-                                ))),
-                                mesh: meshes.add(tile_edge_mesh.into()).into(),
-                                material: materials.add(tile_edge_color_material.clone()),
-                                ..Default::default()
-                            },
+                        TileHexGrid { grid },
+                        MaterialMesh2dBundle {
+                            transform: Transform::from_translation(Vec3::from((
+                                tile_position,
+                                config.tile_edge_layer,
+                            ))),
+                            mesh: meshes.add(tile_edge_mesh.into()).into(),
+                            material: materials.add(tile_edge_color_material.clone()),
+                            ..Default::default()
                         },
                     ));
                     let material_mesh_id = parent
-                        .spawn(TileMaterialMeshBundle {
-                            grid: TileHexGrid { grid },
-                            material_mesh: MaterialMesh2dBundle {
+                        .spawn((
+                            TileHexGrid { grid },
+                            MaterialMesh2dBundle {
                                 transform: Transform::from_translation(Vec3::from((
                                     tile_position,
                                     config.tile_layer,
@@ -132,19 +115,19 @@ fn setup_view(
                                 material: materials.add(tile_color_material.clone()),
                                 ..Default::default()
                             },
-                        })
+                        ))
                         .id();
 
-                    let (value, color) = get_tile_text_section(&game_board, grid, &config);
+                    let (value, color) = get_tile_text_and_color(&game_board, grid, &config);
                     let tile_text_style = TextStyle {
                         font: tile_text_font.clone(),
                         font_size: config.tile_text_size,
                         color,
                     };
                     let text_id = parent
-                        .spawn(TileTextBundle {
-                            grid: TileHexGrid { grid },
-                            text: Text2dBundle {
+                        .spawn((
+                            TileHexGrid { grid },
+                            Text2dBundle {
                                 transform: Transform::from_translation(Vec3::from((
                                     tile_position,
                                     config.tile_text_layer,
@@ -153,7 +136,7 @@ fn setup_view(
                                     .with_alignment(TextAlignment::CENTER),
                                 ..Default::default()
                             },
-                        })
+                        ))
                         .id();
                     material_mesh_ids.insert(grid, material_mesh_id);
                     text_ids.insert(grid, text_id);
@@ -218,7 +201,7 @@ fn on_move_tile_system(
         };
         if let Some(tile_text_entity) = tile_ids.text_ids.get(target) {
             if let Ok(mut tile_text) = tile_text_query.get_mut(*tile_text_entity) {
-                let (value, color) = get_tile_text_section(&game_board, *target, &config);
+                let (value, color) = get_tile_text_and_color(&game_board, *target, &config);
                 tile_text.sections[0].value = value;
                 tile_text.sections[0].style.color = color;
             }
@@ -226,7 +209,7 @@ fn on_move_tile_system(
     }
 }
 
-fn get_tile_text_section(
+fn get_tile_text_and_color(
     game_board: &model::GameBoard,
     grid: PointyHexGrid,
     config: &Config,
@@ -250,5 +233,64 @@ fn get_tile_text_section(
         }
     } else {
         ("ERROR".to_string(), Color::PINK)
+    }
+}
+
+#[derive(Component)]
+struct GameOverParent;
+
+fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Res<AssetServer>) {
+    commands
+        .spawn((
+            GameOverParent,
+            Transform::from_translation(Vec3::ZERO),
+            GlobalTransform::default(),
+            Visibility::INVISIBLE,
+            ComputedVisibility::INVISIBLE,
+        ))
+        .add_children(|parent| {
+            parent.spawn(SpriteBundle {
+                sprite: Sprite {
+                    color: config.game_over_background_color,
+                    ..Default::default()
+                },
+                transform: Transform::from_scale(Vec3 {
+                    x: 10000.0,
+                    y: 10000.0,
+                    z: 1.0,
+                })
+                .with_translation(Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: config.game_over_background_layer,
+                }),
+                ..Default::default()
+            });
+            let game_over_text_font = asset_server.load(&config.game_over_text_font_path);
+            let game_over_text_style = TextStyle {
+                font: game_over_text_font,
+                font_size: config.game_over_text_size,
+                color: config.game_over_text_color,
+            };
+            parent.spawn(Text2dBundle {
+                text: Text::from_section("Game Over", game_over_text_style)
+                    .with_alignment(TextAlignment::CENTER),
+                transform: Transform::from_translation(Vec3::from((
+                    config.game_over_text_position,
+                    config.game_over_text_layer,
+                ))),
+                ..Default::default()
+            });
+        });
+}
+
+fn on_game_over(
+    mut commands: Commands,
+    mut reader: EventReader<OnGameOver>,
+    mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
+) {
+    for event in reader.iter() {
+        let mut game_over = game_over_query.single_mut();
+        game_over.is_visible = true;
     }
 }

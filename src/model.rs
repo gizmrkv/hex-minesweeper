@@ -184,6 +184,7 @@ fn on_try_open_tile_system(
     mut game_board: ResMut<GameBoard>,
     mut reader: EventReader<events::OnTryOpenTile>,
     mut writer: EventWriter<events::OnMoveTile>,
+    mut game_over_writer: EventWriter<events::OnGameOver>,
 ) {
     for event in reader.iter() {
         if let Some(tile_state) = game_board.get_mut(event.target) {
@@ -192,6 +193,9 @@ fn on_try_open_tile_system(
                 writer.send(events::OnMoveTile::Open {
                     target: event.target,
                 });
+            }
+            if tile_state.is_mine {
+                game_over_writer.send(events::OnGameOver);
             }
         }
     }
