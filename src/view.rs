@@ -1,7 +1,6 @@
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::{model, Config, CursorWorldPosition};
-use bevy::input::mouse::MouseMotion;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 

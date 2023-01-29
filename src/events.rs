@@ -39,11 +39,18 @@ impl Plugin for EventsPlugin {
             .add_event::<OnGameOver>()
             .add_event::<OnGameClear>()
             .add_event::<OnQuitGame>()
-            .add_system(info_on_try_open_tile_system);
+            .add_system(info_on_try_open_tile_system)
+            .add_system(info_on_move_tile_system);
     }
 }
 
 fn info_on_try_open_tile_system(mut reader: EventReader<OnTryOpenTile>) {
+    for event in reader.iter() {
+        info!("{:?}", event);
+    }
+}
+
+fn info_on_move_tile_system(mut reader: EventReader<OnMoveTile>) {
     for event in reader.iter() {
         info!("{:?}", event);
     }

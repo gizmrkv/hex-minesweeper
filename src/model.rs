@@ -1,3 +1,4 @@
+use crate::events;
 use crate::hexgrid;
 use bevy::prelude::*;
 
@@ -5,7 +6,8 @@ pub struct ModelPlugin;
 
 impl Plugin for ModelPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GameBoard::new(4));
+        app.insert_resource(GameBoard::new(4))
+            .add_system(on_try_open_tile_system);
     }
 }
 
@@ -99,6 +101,33 @@ impl GameBoard {
                 }
             }
             Some(count)
+        }
+    }
+
+    pub fn try_open_tile(&mut self, grid: hexgrid::PointyHexGrid) -> bool {
+        if let Some(tile_state) = self.get_mut(grid) {
+            if tile_state.is_open {
+                false
+            } else {
+                tile_state.is_open = true;
+                true
+            }
+        } else {
+            false
+        }
+    }
+}
+
+fn on_try_open_tile_system(
+    mut game_board: ResMut<GameBoard>,
+    mut reader: EventReader<events::OnTryOpenTile>,
+    mut writer: EventWriter<events::OnMoveTile>,
+) {
+    for event in reader.iter() {
+        if game_board.try_open_tile(event.target) {
+            writer.send(events::OnMoveTile::Open {
+                target: event.target,
+            });
         }
     }
 }
