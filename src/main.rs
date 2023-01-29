@@ -1,11 +1,13 @@
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
+pub use std::io::*;
 
 mod controller;
 mod events;
 mod hexgrid;
 mod model;
+mod read_macro;
 mod view;
 
 #[derive(Resource)]
