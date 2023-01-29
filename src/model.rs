@@ -1,14 +1,22 @@
 use crate::events;
 use crate::hexgrid;
+use crate::hexgrid::PointyHexGrid;
+use crate::read_to_end;
 use bevy::prelude::*;
+use std::fs;
+use std::io::*;
 
 pub struct ModelPlugin;
 
 impl Plugin for ModelPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(GameBoard::new(4))
-            .add_system(on_try_open_tile_system)
-            .add_system(on_try_flag_tile_system);
+        if let Ok(game_board) = GameBoard::load(1) {
+            app.insert_resource(game_board)
+                .add_system(on_try_open_tile_system)
+                .add_system(on_try_flag_tile_system);
+        } else {
+            debug_assert!(true, "failed to load game board");
+        }
     }
 }
 
@@ -33,25 +41,66 @@ impl TileState {
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default, Debug)]
 pub struct GameBoard {
     tiles_per_side: usize,
     board: Vec<TileState>,
 }
 
 impl GameBoard {
-    pub fn new(side_size: usize) -> Self {
+    pub fn new(tiles_per_side: usize) -> Self {
+        Self {
+            tiles_per_side,
+            board: vec![default(); (2 * tiles_per_side - 1) * (2 * tiles_per_side - 1)],
+        }
+    }
+
+    pub fn load(id: usize) -> Result<Self> {
+        use crate::*;
+        let stdin = fs::File::open(format!("assets/boards/{}.txt", id))?;
+        let mut reader = BufReader::new(stdin);
+        read_to_end!(
+            reader,
+            tiles_per_side: usize,
+            board_text: [chars; 2 * tiles_per_side - 1]
+        );
+
         let mut board = Self {
-            tiles_per_side: side_size,
-            board: vec![default(); (2 * side_size - 1) * (2 * side_size - 1)],
+            tiles_per_side,
+            board: vec![default(); (2 * tiles_per_side - 1) * (2 * tiles_per_side - 1)],
         };
-        if let Some(tile) = board.get_mut(hexgrid::PointyHexGrid { x: 4, y: 4 }) {
-            tile.is_open = true;
+
+        for x in 0..(2 * tiles_per_side - 1) {
+            for y in 0..(2 * tiles_per_side - 1) {
+                if let Some(mut tile_state) = board.get_mut(PointyHexGrid {
+                    x: x as i32,
+                    y: y as i32,
+                }) {
+                    *tile_state = match board_text[y][x] {
+                        '.' => TileState {
+                            is_open: false,
+                            is_flag: false,
+                            is_mine: false,
+                        },
+                        'O' => TileState {
+                            is_open: true,
+                            is_flag: false,
+                            is_mine: false,
+                        },
+                        'M' => TileState {
+                            is_open: false,
+                            is_flag: false,
+                            is_mine: true,
+                        },
+                        _ => {
+                            panic!("board text error! : {}", board_text[y][x])
+                        }
+                    }
+                }
+            }
         }
-        if let Some(tile) = board.get_mut(hexgrid::PointyHexGrid { x: 5, y: 4 }) {
-            tile.is_mine = true;
-        }
-        board
+
+        Ok(board)
     }
 
     pub fn tiles_per_side(&self) -> usize {
@@ -63,7 +112,7 @@ impl GameBoard {
             None
         } else {
             self.board
-                .get((grid.y * 2 * (self.tiles_per_side as i32 - 1) + grid.x) as usize)
+                .get((grid.y * (2 * self.tiles_per_side as i32 - 1) + grid.x) as usize)
         }
     }
 
@@ -72,7 +121,7 @@ impl GameBoard {
             None
         } else {
             self.board
-                .get_mut((grid.y * 2 * (self.tiles_per_side as i32 - 1) + grid.x) as usize)
+                .get_mut((grid.y * (2 * self.tiles_per_side as i32 - 1) + grid.x) as usize)
         }
     }
 
@@ -107,11 +156,11 @@ impl GameBoard {
 
     pub fn try_open_tile(&mut self, grid: hexgrid::PointyHexGrid) -> bool {
         if let Some(tile_state) = self.get_mut(grid) {
-            if tile_state.is_open {
-                false
-            } else {
+            if !tile_state.is_open && !tile_state.is_flag {
                 tile_state.is_open = true;
                 true
+            } else {
+                false
             }
         } else {
             false
@@ -129,6 +178,13 @@ impl GameBoard {
         } else {
             false
         }
+    }
+
+    pub fn count_open_tile(&self) -> usize {
+        self.board
+            .iter()
+            .filter(|tile_state| tile_state.is_open)
+            .count()
     }
 }
 

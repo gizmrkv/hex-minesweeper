@@ -10,23 +10,6 @@ mod model;
 mod read_macro;
 mod view;
 
-#[derive(Resource)]
-pub struct Config {
-    pub tile_size: f32,
-    pub tile_gap_scale: f32,
-    pub tile_layer: f32,
-    pub tile_edge_layer: f32,
-    pub tile_color: Color,
-    pub tile_edge_color: Color,
-    pub tile_selected_color: Color,
-    pub tile_text_font_path: String,
-    pub tile_text_size: f32,
-    pub tile_text_hint_color: Color,
-    pub tile_text_flag_color: Color,
-    pub tile_text_mine_color: Color,
-    pub tile_text_layer: f32,
-}
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(LogPlugin {
@@ -59,6 +42,23 @@ fn main() {
         .add_plugin(controller::ControllerPlugin)
         .add_plugin(events::EventsPlugin)
         .run();
+}
+
+#[derive(Resource)]
+pub struct Config {
+    pub tile_size: f32,
+    pub tile_gap_scale: f32,
+    pub tile_layer: f32,
+    pub tile_edge_layer: f32,
+    pub tile_color: Color,
+    pub tile_edge_color: Color,
+    pub tile_selected_color: Color,
+    pub tile_text_font_path: String,
+    pub tile_text_size: f32,
+    pub tile_text_hint_color: Color,
+    pub tile_text_flag_color: Color,
+    pub tile_text_mine_color: Color,
+    pub tile_text_layer: f32,
 }
 
 fn setup(mut commands: Commands) {

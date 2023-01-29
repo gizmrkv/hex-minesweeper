@@ -233,19 +233,23 @@ fn get_tile_text_section(
     config: &Config,
 ) -> (String, Color) {
     if let Some(tile_state) = game_board.get(grid) {
-        if tile_state.is_open() && !tile_state.is_mine() {
-            (
-                format!("{}", game_board.count_adjacent_mines(grid).unwrap()),
-                config.tile_text_hint_color,
-            )
-        } else if tile_state.is_open() && tile_state.is_mine() {
-            ("M".to_string(), config.tile_text_mine_color)
-        } else if tile_state.is_flag() {
-            ("F".to_string(), config.tile_text_flag_color)
+        if tile_state.is_open() {
+            if tile_state.is_mine() {
+                ("M".to_string(), config.tile_text_mine_color)
+            } else {
+                (
+                    format!("{}", game_board.count_adjacent_mines(grid).unwrap()),
+                    config.tile_text_hint_color,
+                )
+            }
         } else {
-            ("".to_string(), Color::PINK)
+            if tile_state.is_flag() {
+                ("F".to_string(), config.tile_text_flag_color)
+            } else {
+                (" ".to_string(), Color::PINK)
+            }
         }
     } else {
-        ("".to_string(), Color::PINK)
+        ("ERROR".to_string(), Color::PINK)
     }
 }
