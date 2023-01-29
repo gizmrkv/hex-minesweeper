@@ -1,3 +1,4 @@
+use crate::events::*;
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::{model, Config, CursorWorldPosition};
@@ -10,7 +11,8 @@ impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(SelectedTile::default())
             .add_startup_system(setup_view)
-            .add_system(recolor_tile_selected_system);
+            .add_system(recolor_tile_selected_system)
+            .add_system(on_move_tile_system);
     }
 }
 
@@ -109,16 +111,7 @@ fn setup_view(
                     let tile_position =
                         hexgrid::pointy_hex_grid_to_cartesian(grid) * config.tile_size;
 
-                    let tile_text = if tile_state.is_open() && !tile_state.is_mine() {
-                        format!("{}", game_board.count_adjacent_mines(grid).unwrap())
-                    } else if tile_state.is_open() && tile_state.is_mine() {
-                        "M".to_string()
-                    } else if tile_state.is_flag() {
-                        "F".to_string()
-                    } else {
-                        " ".to_string()
-                    };
-
+                    let tile_text = get_tile_text(&game_board, grid);
                     parent.spawn((
                         TileEdge,
                         TileMaterialMeshBundle {
@@ -208,5 +201,41 @@ fn recolor_tile_selected_system(
                 color_material.color = config.tile_selected_color;
             }
         }
+    }
+}
+
+fn on_move_tile_system(
+    mut reader: EventReader<OnMoveTile>,
+    mut tile_text_query: Query<&mut Text>,
+    tile_ids: Res<TileIds>,
+    game_board: Res<model::GameBoard>,
+) {
+    for event in reader.iter() {
+        match event {
+            OnMoveTile::Open { target } => {
+                if let Some(tile_text_entity) = tile_ids.text_ids.get(target) {
+                    if let Ok(mut tile_text) = tile_text_query.get_mut(*tile_text_entity) {
+                        tile_text.sections[0].value = get_tile_text(&game_board, *target);
+                    }
+                }
+            }
+            OnMoveTile::Flag { target } => {}
+        }
+    }
+}
+
+fn get_tile_text(game_board: &model::GameBoard, grid: PointyHexGrid) -> String {
+    if let Some(tile_state) = game_board.get(grid) {
+        if tile_state.is_open() && !tile_state.is_mine() {
+            format!("{}", game_board.count_adjacent_mines(grid).unwrap())
+        } else if tile_state.is_open() && tile_state.is_mine() {
+            "M".to_string()
+        } else if tile_state.is_flag() {
+            "F".to_string()
+        } else {
+            " ".to_string()
+        }
+    } else {
+        "".to_string()
     }
 }
