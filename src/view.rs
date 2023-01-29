@@ -268,7 +268,7 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
             });
             let game_over_text_font = asset_server.load(&config.game_over_text_font_path);
             let game_over_text_style = TextStyle {
-                font: game_over_text_font,
+                font: game_over_text_font.clone(),
                 font_size: config.game_over_text_size,
                 color: config.game_over_text_color,
             };
@@ -277,6 +277,23 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
                     .with_alignment(TextAlignment::CENTER),
                 transform: Transform::from_translation(Vec3::from((
                     config.game_over_text_position,
+                    config.game_over_text_layer,
+                ))),
+                ..Default::default()
+            });
+            let game_over_text_below_style = TextStyle {
+                font: game_over_text_font.clone(),
+                font_size: config.game_over_text_below_size,
+                color: config.game_over_text_below_color,
+            };
+            parent.spawn(Text2dBundle {
+                text: Text::from_section(
+                    config.game_over_text_below.clone(),
+                    game_over_text_below_style,
+                )
+                .with_alignment(TextAlignment::CENTER),
+                transform: Transform::from_translation(Vec3::from((
+                    config.game_over_text_below_position,
                     config.game_over_text_layer,
                 ))),
                 ..Default::default()

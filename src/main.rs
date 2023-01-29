@@ -35,9 +35,13 @@ fn main() {
             tile_text_mine_color: Color::rgb(0.8, 0.0, 0.0),
             game_over_background_color: Color::rgba(0.0, 0.0, 0.0, 0.9),
             game_over_text_color: Color::rgb(0.9, 0.9, 0.9),
-            game_over_text_position: Vec2 { x: 0.0, y: 0.0 },
+            game_over_text_position: Vec2 { x: 0.0, y: 20.0 },
             game_over_text_size: 100.0,
             game_over_text: "You Exploded".to_string(),
+            game_over_text_below_color: Color::rgb(0.9, 0.9, 0.9),
+            game_over_text_below_position: Vec2 { x: 0.0, y: -60.0 },
+            game_over_text_below_size: 40.0,
+            game_over_text_below: "click anywhere to retry".to_string(),
             tile_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
             game_over_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
         })
@@ -80,6 +84,11 @@ pub struct Config {
     pub game_over_text_size: f32,
     pub game_over_text_position: Vec2,
     pub game_over_text: String,
+
+    pub game_over_text_below_color: Color,
+    pub game_over_text_below_position: Vec2,
+    pub game_over_text_below_size: f32,
+    pub game_over_text_below: String,
 }
 
 fn setup(mut commands: Commands) {
