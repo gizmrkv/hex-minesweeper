@@ -273,7 +273,7 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
                 color: config.game_over_text_color,
             };
             parent.spawn(Text2dBundle {
-                text: Text::from_section("Game Over", game_over_text_style)
+                text: Text::from_section(config.game_over_text.clone(), game_over_text_style)
                     .with_alignment(TextAlignment::CENTER),
                 transform: Transform::from_translation(Vec3::from((
                     config.game_over_text_position,
