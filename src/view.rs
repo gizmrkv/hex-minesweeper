@@ -14,7 +14,8 @@ impl Plugin for ViewPlugin {
             .add_startup_system(setup_game_over)
             .add_system(recolor_tile_selected_system)
             .add_system(on_move_tile_system)
-            .add_system(on_game_over);
+            .add_system(on_game_over)
+            .add_system(on_retry);
     }
 }
 
@@ -309,5 +310,15 @@ fn on_game_over(
     for event in reader.iter() {
         let mut game_over = game_over_query.single_mut();
         game_over.is_visible = true;
+    }
+}
+
+fn on_retry(
+    mut reader: EventReader<OnRetry>,
+    mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
+) {
+    for event in reader.iter() {
+        let mut game_over = game_over_query.single_mut();
+        game_over.is_visible = false;
     }
 }

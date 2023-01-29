@@ -28,6 +28,9 @@ pub struct OnGameClear;
 #[derive(Debug)]
 pub struct OnQuitGame;
 
+#[derive(Debug)]
+pub struct OnRetry;
+
 pub struct EventsPlugin;
 
 impl Plugin for EventsPlugin {
@@ -39,10 +42,12 @@ impl Plugin for EventsPlugin {
             .add_event::<OnGameOver>()
             .add_event::<OnGameClear>()
             .add_event::<OnQuitGame>()
+            .add_event::<OnRetry>()
             .add_system(info_on_try_open_tile_system)
             .add_system(info_on_move_tile_system)
             .add_system(info_on_try_flag_tile_system)
-            .add_system(info_on_game_over_system);
+            .add_system(info_on_game_over_system)
+            .add_system(info_on_retry_system);
     }
 }
 
@@ -65,6 +70,12 @@ fn info_on_try_flag_tile_system(mut reader: EventReader<OnTryFlagTile>) {
 }
 
 fn info_on_game_over_system(mut reader: EventReader<OnGameOver>) {
+    for event in reader.iter() {
+        info!("{:?}", event);
+    }
+}
+
+fn info_on_retry_system(mut reader: EventReader<OnRetry>) {
     for event in reader.iter() {
         info!("{:?}", event);
     }

@@ -11,7 +11,7 @@ impl Plugin for ScenePlugin {
 }
 
 #[derive(Resource)]
-enum GameScene {
+pub enum GameScene {
     Over,
     Clear,
     InGame,
