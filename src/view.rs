@@ -14,8 +14,9 @@ impl Plugin for ViewPlugin {
             .add_startup_system(setup_game_over)
             .add_system(recolor_tile_selected_system)
             .add_system(on_move_tile_system)
-            .add_system(on_game_over)
-            .add_system(on_retry);
+            .add_system(on_game_over_system)
+            .add_system(on_retry_system)
+            .add_system(on_undo_tile_system);
     }
 }
 
@@ -302,7 +303,7 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
         });
 }
 
-fn on_game_over(
+fn on_game_over_system(
     mut commands: Commands,
     mut reader: EventReader<OnGameOver>,
     mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
@@ -313,12 +314,34 @@ fn on_game_over(
     }
 }
 
-fn on_retry(
+fn on_retry_system(
     mut reader: EventReader<OnRetry>,
     mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
 ) {
     for event in reader.iter() {
         let mut game_over = game_over_query.single_mut();
         game_over.is_visible = false;
+    }
+}
+
+fn on_undo_tile_system(
+    mut reader: EventReader<OnUndoTile>,
+    mut tile_text_query: Query<&mut Text>,
+    tile_ids: Res<TileIds>,
+    game_board: Res<model::GameBoard>,
+    config: Res<Config>,
+) {
+    for event in reader.iter() {
+        let target = match event {
+            OnUndoTile::UnOpen { target } => target,
+            OnUndoTile::UnFlag { target } => target,
+        };
+        if let Some(tile_text_entity) = tile_ids.text_ids.get(target) {
+            if let Ok(mut tile_text) = tile_text_query.get_mut(*tile_text_entity) {
+                let (value, color) = get_tile_text_and_color(&game_board, *target, &config);
+                tile_text.sections[0].value = value;
+                tile_text.sections[0].style.color = color;
+            }
+        }
     }
 }

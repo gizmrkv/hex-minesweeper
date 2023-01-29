@@ -1,8 +1,10 @@
 use crate::events;
+use crate::events::OnMoveTile;
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::read_to_end;
 use bevy::prelude::*;
+use std::collections::VecDeque;
 use std::fs;
 use std::io::*;
 
@@ -13,7 +15,8 @@ impl Plugin for ModelPlugin {
         if let Ok(game_board) = GameBoard::load(1) {
             app.insert_resource(game_board)
                 .add_system(on_try_open_tile_system)
-                .add_system(on_try_flag_tile_system);
+                .add_system(on_try_flag_tile_system)
+                .add_system(on_undo_system);
         } else {
             debug_assert!(true, "failed to load game board");
         }
@@ -45,6 +48,7 @@ impl TileState {
 pub struct GameBoard {
     tiles_per_side: usize,
     board: Vec<TileState>,
+    move_stack: VecDeque<OnMoveTile>,
 }
 
 impl GameBoard {
@@ -52,6 +56,7 @@ impl GameBoard {
         Self {
             tiles_per_side,
             board: vec![default(); (2 * tiles_per_side - 1) * (2 * tiles_per_side - 1)],
+            ..Default::default()
         }
     }
 
@@ -68,6 +73,7 @@ impl GameBoard {
         let mut board = Self {
             tiles_per_side,
             board: vec![default(); (2 * tiles_per_side - 1) * (2 * tiles_per_side - 1)],
+            ..Default::default()
         };
 
         for x in 0..(2 * tiles_per_side - 1) {
@@ -187,16 +193,22 @@ fn on_try_open_tile_system(
     mut game_over_writer: EventWriter<events::OnGameOver>,
 ) {
     for event in reader.iter() {
+        let mut open = false;
         if let Some(tile_state) = game_board.get_mut(event.target) {
             if !tile_state.is_open && !tile_state.is_flag {
                 tile_state.is_open = true;
-                writer.send(events::OnMoveTile::Open {
-                    target: event.target,
-                });
+                open = true;
             }
             if tile_state.is_mine {
                 game_over_writer.send(events::OnGameOver);
             }
+        }
+        if open {
+            let open_event = events::OnMoveTile::Open {
+                target: event.target,
+            };
+            game_board.move_stack.push_back(open_event);
+            writer.send(open_event);
         }
     }
 }
@@ -207,12 +219,47 @@ fn on_try_flag_tile_system(
     mut writer: EventWriter<events::OnMoveTile>,
 ) {
     for event in reader.iter() {
+        let mut flag = false;
         if let Some(tile_state) = game_board.get_mut(event.target) {
             if !tile_state.is_open && !tile_state.is_flag {
                 tile_state.is_flag = true;
-                writer.send(events::OnMoveTile::Flag {
-                    target: event.target,
-                });
+                flag = true;
+            }
+        }
+        if flag {
+            let flag_event = events::OnMoveTile::Flag {
+                target: event.target,
+            };
+            game_board.move_stack.push_back(flag_event);
+            writer.send(flag_event);
+        }
+    }
+}
+
+fn on_undo_system(
+    mut game_board: ResMut<GameBoard>,
+    mut reader: EventReader<events::OnTryUndo>,
+    mut writer: EventWriter<events::OnUndoTile>,
+) {
+    for event in reader.iter() {
+        if let Some(prev_move) = game_board.move_stack.pop_back() {
+            match prev_move {
+                OnMoveTile::Open { target } => {
+                    if let Some(tile_state) = game_board.get_mut(target) {
+                        tile_state.is_open = false;
+                    }
+                    println!("aa");
+                    writer.send(events::OnUndoTile::UnOpen { target });
+                    println!("bb");
+                }
+                OnMoveTile::Flag { target } => {
+                    if let Some(tile_state) = game_board.get_mut(target) {
+                        tile_state.is_flag = false;
+                    }
+                    println!("cc");
+                    writer.send(events::OnUndoTile::UnFlag { target });
+                    println!("dd");
+                }
             }
         }
     }
