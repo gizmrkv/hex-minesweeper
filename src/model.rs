@@ -7,7 +7,8 @@ pub struct ModelPlugin;
 impl Plugin for ModelPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GameBoard::new(4))
-            .add_system(on_try_open_tile_system);
+            .add_system(on_try_open_tile_system)
+            .add_system(on_try_flag_tile_system);
     }
 }
 
@@ -116,6 +117,19 @@ impl GameBoard {
             false
         }
     }
+
+    pub fn try_flag_tile(&mut self, grid: hexgrid::PointyHexGrid) -> bool {
+        if let Some(tile_state) = self.get_mut(grid) {
+            if !tile_state.is_open && !tile_state.is_flag {
+                tile_state.is_flag = true;
+                true
+            } else {
+                false
+            }
+        } else {
+            false
+        }
+    }
 }
 
 fn on_try_open_tile_system(
@@ -126,6 +140,20 @@ fn on_try_open_tile_system(
     for event in reader.iter() {
         if game_board.try_open_tile(event.target) {
             writer.send(events::OnMoveTile::Open {
+                target: event.target,
+            });
+        }
+    }
+}
+
+fn on_try_flag_tile_system(
+    mut game_board: ResMut<GameBoard>,
+    mut reader: EventReader<events::OnTryFlagTile>,
+    mut writer: EventWriter<events::OnMoveTile>,
+) {
+    for event in reader.iter() {
+        if game_board.try_flag_tile(event.target) {
+            writer.send(events::OnMoveTile::Flag {
                 target: event.target,
             });
         }

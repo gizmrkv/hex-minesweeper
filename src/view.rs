@@ -2,6 +2,7 @@ use crate::events::*;
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::{model, Config, CursorWorldPosition};
+use bevy::render::color;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
@@ -86,11 +87,6 @@ fn setup_view(
     let tile_edge_color_material = ColorMaterial::from(config.tile_edge_color);
 
     let tile_text_font = asset_server.load(&config.tile_text_font_path);
-    let tile_text_style = TextStyle {
-        font: tile_text_font,
-        font_size: config.tile_text_size,
-        color: config.tile_text_color,
-    };
 
     let mut tilemap_entity_commands = commands.spawn(TilemapBundle {
         transform: Transform::from_translation(tilemap_translation),
@@ -110,8 +106,6 @@ fn setup_view(
                 if let Some(tile_state) = game_board.get(grid) {
                     let tile_position =
                         hexgrid::pointy_hex_grid_to_cartesian(grid) * config.tile_size;
-
-                    let tile_text = get_tile_text(&game_board, grid);
                     parent.spawn((
                         TileEdge,
                         TileMaterialMeshBundle {
@@ -141,6 +135,13 @@ fn setup_view(
                             },
                         })
                         .id();
+
+                    let (value, color) = get_tile_text_section(&game_board, grid, &config);
+                    let tile_text_style = TextStyle {
+                        font: tile_text_font.clone(),
+                        font_size: config.tile_text_size,
+                        color,
+                    };
                     let text_id = parent
                         .spawn(TileTextBundle {
                             grid: TileHexGrid { grid },
@@ -149,7 +150,7 @@ fn setup_view(
                                     tile_position,
                                     config.tile_text_layer,
                                 ))),
-                                text: Text::from_section(tile_text, tile_text_style.clone())
+                                text: Text::from_section(value, tile_text_style)
                                     .with_alignment(TextAlignment::CENTER),
                                 ..Default::default()
                             },
@@ -209,33 +210,42 @@ fn on_move_tile_system(
     mut tile_text_query: Query<&mut Text>,
     tile_ids: Res<TileIds>,
     game_board: Res<model::GameBoard>,
+    config: Res<Config>,
 ) {
     for event in reader.iter() {
-        match event {
-            OnMoveTile::Open { target } => {
-                if let Some(tile_text_entity) = tile_ids.text_ids.get(target) {
-                    if let Ok(mut tile_text) = tile_text_query.get_mut(*tile_text_entity) {
-                        tile_text.sections[0].value = get_tile_text(&game_board, *target);
-                    }
-                }
+        let target = match event {
+            OnMoveTile::Open { target } => target,
+            OnMoveTile::Flag { target } => target,
+        };
+        if let Some(tile_text_entity) = tile_ids.text_ids.get(target) {
+            if let Ok(mut tile_text) = tile_text_query.get_mut(*tile_text_entity) {
+                let (value, color) = get_tile_text_section(&game_board, *target, &config);
+                tile_text.sections[0].value = value;
+                tile_text.sections[0].style.color = color;
             }
-            OnMoveTile::Flag { target } => {}
         }
     }
 }
 
-fn get_tile_text(game_board: &model::GameBoard, grid: PointyHexGrid) -> String {
+fn get_tile_text_section(
+    game_board: &model::GameBoard,
+    grid: PointyHexGrid,
+    config: &Config,
+) -> (String, Color) {
     if let Some(tile_state) = game_board.get(grid) {
         if tile_state.is_open() && !tile_state.is_mine() {
-            format!("{}", game_board.count_adjacent_mines(grid).unwrap())
+            (
+                format!("{}", game_board.count_adjacent_mines(grid).unwrap()),
+                config.tile_text_hint_color,
+            )
         } else if tile_state.is_open() && tile_state.is_mine() {
-            "M".to_string()
+            ("M".to_string(), config.tile_text_mine_color)
         } else if tile_state.is_flag() {
-            "F".to_string()
+            ("F".to_string(), config.tile_text_flag_color)
         } else {
-            " ".to_string()
+            ("".to_string(), Color::PINK)
         }
     } else {
-        "".to_string()
+        ("".to_string(), Color::PINK)
     }
 }
