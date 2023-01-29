@@ -1,6 +1,7 @@
 use crate::hexgrid;
 use crate::hexgrid::PointyHexGrid;
 use crate::{model, Config, CursorWorldPosition};
+use bevy::input::mouse::MouseMotion;
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
 use std::collections::HashMap;
 
@@ -8,19 +9,14 @@ pub struct ViewPlugin;
 
 impl Plugin for ViewPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_view)
+        app.insert_resource(SelectedTile::default())
+            .add_startup_system(setup_view)
             .add_system(recolor_tile_selected_system);
     }
 }
 
 #[derive(Component, Default)]
 pub struct Tilemap;
-
-#[derive(Resource)]
-struct TileIds {
-    pub material_mesh_ids: HashMap<PointyHexGrid, Entity>,
-    pub text_ids: HashMap<PointyHexGrid, Entity>,
-}
 
 #[derive(Component, Default)]
 struct TileHexGrid {
@@ -29,6 +25,17 @@ struct TileHexGrid {
 
 #[derive(Component)]
 struct TileEdge;
+
+#[derive(Resource)]
+struct TileIds {
+    pub material_mesh_ids: HashMap<PointyHexGrid, Entity>,
+    pub text_ids: HashMap<PointyHexGrid, Entity>,
+}
+
+#[derive(Resource, Default)]
+struct SelectedTile {
+    pub grid: PointyHexGrid,
+}
 
 #[derive(Bundle, Default)]
 struct TilemapBundle {
@@ -171,10 +178,12 @@ fn setup_view(
 
 fn recolor_tile_selected_system(
     mut tile_color_query: Query<(&TileHexGrid, &mut Handle<ColorMaterial>), Without<TileEdge>>,
-    cursor_world_position: Res<CursorWorldPosition>,
     tilemap_query: Query<&Transform, With<Tilemap>>,
+    cursor_world_position: Res<CursorWorldPosition>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     config: Res<Config>,
+    tile_ids: Res<TileIds>,
+    mut selexted_tile: ResMut<SelectedTile>,
 ) {
     let tilemap_transform = tilemap_query.single();
     let cursor_grid = hexgrid::cartesian_point_to_nearest_pointy_hex_grid(
@@ -182,12 +191,22 @@ fn recolor_tile_selected_system(
             / config.tile_size,
     );
 
-    for (tile_grid, color_handle) in &mut tile_color_query {
-        if let Some(color_material) = materials.get_mut(&color_handle) {
-            if tile_grid.grid == cursor_grid {
-                color_material.color = config.tile_selected_color;
-            } else {
+    // 色を戻す
+    if let Some(grid_entity) = tile_ids.material_mesh_ids.get(&selexted_tile.grid) {
+        if let Ok((tile_grid, color_handle)) = tile_color_query.get(*grid_entity) {
+            if let Some(color_material) = materials.get_mut(&color_handle) {
                 color_material.color = config.tile_color;
+            }
+        }
+    }
+
+    selexted_tile.grid = cursor_grid;
+
+    //色を付ける
+    if let Some(grid_entity) = tile_ids.material_mesh_ids.get(&selexted_tile.grid) {
+        if let Ok((tile_grid, color_handle)) = tile_color_query.get(*grid_entity) {
+            if let Some(color_material) = materials.get_mut(&color_handle) {
+                color_material.color = config.tile_selected_color;
             }
         }
     }
