@@ -217,6 +217,7 @@ fn on_try_flag_tile_system(
     mut game_board: ResMut<GameBoard>,
     mut reader: EventReader<events::OnTryFlagTile>,
     mut writer: EventWriter<events::OnMoveTile>,
+    mut game_clear_writer: EventWriter<events::OnGameClear>,
 ) {
     for event in reader.iter() {
         let mut flag = false;
@@ -224,6 +225,10 @@ fn on_try_flag_tile_system(
             if !tile_state.is_open && !tile_state.is_flag {
                 tile_state.is_flag = true;
                 flag = true;
+            }
+
+            if game_board.count_remaining_mines() == 0 {
+                game_clear_writer.send(events::OnGameClear);
             }
         }
         if flag {
@@ -241,24 +246,20 @@ fn on_undo_system(
     mut reader: EventReader<events::OnTryUndo>,
     mut writer: EventWriter<events::OnUndoTile>,
 ) {
-    for event in reader.iter() {
+    for _ in reader.iter() {
         if let Some(prev_move) = game_board.move_stack.pop_back() {
             match prev_move {
                 OnMoveTile::Open { target } => {
                     if let Some(tile_state) = game_board.get_mut(target) {
                         tile_state.is_open = false;
                     }
-                    println!("aa");
                     writer.send(events::OnUndoTile::UnOpen { target });
-                    println!("bb");
                 }
                 OnMoveTile::Flag { target } => {
                     if let Some(tile_state) = game_board.get_mut(target) {
                         tile_state.is_flag = false;
                     }
-                    println!("cc");
                     writer.send(events::OnUndoTile::UnFlag { target });
-                    println!("dd");
                 }
             }
         }

@@ -12,9 +12,11 @@ impl Plugin for ViewPlugin {
         app.insert_resource(SelectedTile::default())
             .add_startup_system(setup_view)
             .add_startup_system(setup_game_over)
+            .add_startup_system(setup_game_clear)
             .add_system(recolor_tile_selected_system)
             .add_system(on_move_tile_system)
             .add_system(on_game_over_system)
+            .add_system(on_game_clear_system)
             .add_system(on_retry_system)
             .add_system(on_undo_tile_system);
     }
@@ -304,23 +306,100 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
 }
 
 fn on_game_over_system(
-    mut commands: Commands,
     mut reader: EventReader<OnGameOver>,
     mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
 ) {
-    for event in reader.iter() {
+    for _ in reader.iter() {
         let mut game_over = game_over_query.single_mut();
         game_over.is_visible = true;
     }
 }
 
+#[derive(Component)]
+struct GameClearParent;
+
+fn setup_game_clear(mut commands: Commands, config: Res<Config>, asset_server: Res<AssetServer>) {
+    commands
+        .spawn((
+            GameClearParent,
+            Transform::from_translation(Vec3::ZERO),
+            GlobalTransform::default(),
+            Visibility::INVISIBLE,
+            ComputedVisibility::INVISIBLE,
+        ))
+        .add_children(|parent| {
+            parent.spawn(SpriteBundle {
+                sprite: Sprite {
+                    color: config.game_clear_background_color,
+                    ..Default::default()
+                },
+                transform: Transform::from_scale(Vec3 {
+                    x: 10000.0,
+                    y: 10000.0,
+                    z: 1.0,
+                })
+                .with_translation(Vec3 {
+                    x: 0.0,
+                    y: 0.0,
+                    z: config.game_clear_background_layer,
+                }),
+                ..Default::default()
+            });
+            let game_clear_text_font = asset_server.load(&config.game_clear_text_font_path);
+            let game_clear_text_style = TextStyle {
+                font: game_clear_text_font.clone(),
+                font_size: config.game_clear_text_size,
+                color: config.game_clear_text_color,
+            };
+            parent.spawn(Text2dBundle {
+                text: Text::from_section(config.game_clear_text.clone(), game_clear_text_style)
+                    .with_alignment(TextAlignment::CENTER),
+                transform: Transform::from_translation(Vec3::from((
+                    config.game_clear_text_position,
+                    config.game_clear_text_layer,
+                ))),
+                ..Default::default()
+            });
+            let game_clear_text_below_style = TextStyle {
+                font: game_clear_text_font.clone(),
+                font_size: config.game_clear_text_below_size,
+                color: config.game_clear_text_below_color,
+            };
+            parent.spawn(Text2dBundle {
+                text: Text::from_section(
+                    config.game_clear_text_below.clone(),
+                    game_clear_text_below_style,
+                )
+                .with_alignment(TextAlignment::CENTER),
+                transform: Transform::from_translation(Vec3::from((
+                    config.game_clear_text_below_position,
+                    config.game_clear_text_layer,
+                ))),
+                ..Default::default()
+            });
+        });
+}
+
+fn on_game_clear_system(
+    mut reader: EventReader<OnGameClear>,
+    mut game_clear_query: Query<&mut Visibility, With<GameClearParent>>,
+) {
+    for _ in reader.iter() {
+        let mut game_clear = game_clear_query.single_mut();
+        println!("hoge");
+        game_clear.is_visible = true;
+        println!("hoge");
+    }
+}
+
 fn on_retry_system(
     mut reader: EventReader<OnRetry>,
-    mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
+    mut game_over_query: Query<&mut Visibility, (With<GameOverParent>, Without<GameClearParent>)>,
+    mut game_clear_query: Query<&mut Visibility, (With<GameClearParent>, Without<GameOverParent>)>,
 ) {
-    for event in reader.iter() {
-        let mut game_over = game_over_query.single_mut();
-        game_over.is_visible = false;
+    for _ in reader.iter() {
+        game_over_query.single_mut().is_visible = false;
+        game_clear_query.single_mut().is_visible = false;
     }
 }
 

@@ -12,7 +12,7 @@ impl Plugin for ControllerPlugin {
     fn build(&self, app: &mut App) {
         app.add_system(check_try_move_tile_system)
             .add_system(check_retry_system)
-            .add_system(check_try_undo);
+            .add_system(check_try_undo_system);
     }
 }
 
@@ -47,16 +47,20 @@ fn check_retry_system(
     buttons: Res<Input<MouseButton>>,
     mut writer: EventWriter<OnRetry>,
 ) {
-    if let GameScene::Over = *game_scene {
-        if buttons.just_released(MouseButton::Left) || buttons.just_released(MouseButton::Right) {
-            *game_scene = GameScene::InGame;
-            writer.send(OnRetry);
+    match *game_scene {
+        GameScene::Over | GameScene::Clear => {
+            if buttons.just_released(MouseButton::Left) || buttons.just_released(MouseButton::Right)
+            {
+                *game_scene = GameScene::InGame;
+                writer.send(OnRetry);
+            }
         }
+        _ => {}
     }
 }
 
-fn check_try_undo(
-    mut game_scene: ResMut<GameScene>,
+fn check_try_undo_system(
+    game_scene: Res<GameScene>,
     mut writer: EventWriter<OnTryUndo>,
     keys: Res<Input<KeyCode>>,
 ) {

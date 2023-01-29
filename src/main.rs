@@ -27,6 +27,8 @@ fn main() {
             tile_text_layer: 0.2,
             game_over_background_layer: 1.0,
             game_over_text_layer: 1.1,
+            game_clear_background_layer: 1.0,
+            game_clear_text_layer: 1.1,
             tile_color: Color::rgb(0.1, 0.1, 0.1),
             tile_edge_color: Color::rgb(0.8, 0.8, 0.8),
             tile_selected_color: Color::rgb(0.4, 0.4, 0.4),
@@ -42,8 +44,18 @@ fn main() {
             game_over_text_below_position: Vec2 { x: 0.0, y: -60.0 },
             game_over_text_below_size: 40.0,
             game_over_text_below: "click anywhere to retry".to_string(),
+            game_clear_background_color: Color::rgba(0.0, 0.0, 0.0, 0.9),
+            game_clear_text_color: Color::rgb(0.9, 0.9, 0.9),
+            game_clear_text_position: Vec2 { x: 0.0, y: 20.0 },
+            game_clear_text_size: 100.0,
+            game_clear_text: "Stage Clear!".to_string(),
+            game_clear_text_below_color: Color::rgb(0.9, 0.9, 0.9),
+            game_clear_text_below_position: Vec2 { x: 0.0, y: -60.0 },
+            game_clear_text_below_size: 40.0,
+            game_clear_text_below: "click anywhere to retry".to_string(),
             tile_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
             game_over_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
+            game_clear_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
         })
         .insert_resource(CursorWorldPosition {
             position: Vec2::ZERO,
@@ -68,6 +80,8 @@ pub struct Config {
     pub tile_text_layer: f32,
     pub game_over_background_layer: f32,
     pub game_over_text_layer: f32,
+    pub game_clear_background_layer: f32,
+    pub game_clear_text_layer: f32,
 
     pub tile_color: Color,
     pub tile_edge_color: Color,
@@ -77,6 +91,8 @@ pub struct Config {
     pub tile_text_mine_color: Color,
     pub game_over_background_color: Color,
     pub game_over_text_color: Color,
+    pub game_clear_background_color: Color,
+    pub game_clear_text_color: Color,
 
     pub tile_text_font_path: String,
     pub tile_text_size: f32,
@@ -89,6 +105,16 @@ pub struct Config {
     pub game_over_text_below_position: Vec2,
     pub game_over_text_below_size: f32,
     pub game_over_text_below: String,
+
+    pub game_clear_text_font_path: String,
+    pub game_clear_text_size: f32,
+    pub game_clear_text_position: Vec2,
+    pub game_clear_text: String,
+
+    pub game_clear_text_below_color: Color,
+    pub game_clear_text_below_position: Vec2,
+    pub game_clear_text_below_size: f32,
+    pub game_clear_text_below: String,
 }
 
 fn setup(mut commands: Commands) {

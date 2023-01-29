@@ -54,6 +54,7 @@ impl Plugin for EventsPlugin {
             .add_system(info_on_move_tile_system)
             .add_system(info_on_try_flag_tile_system)
             .add_system(info_on_game_over_system)
+            .add_system(info_on_game_clear_system)
             .add_system(info_on_retry_system)
             .add_system(info_on_try_undo_system)
             .add_system(info_on_undo_tile_system);
@@ -79,6 +80,12 @@ fn info_on_try_flag_tile_system(mut reader: EventReader<OnTryFlagTile>) {
 }
 
 fn info_on_game_over_system(mut reader: EventReader<OnGameOver>) {
+    for event in reader.iter() {
+        info!("{:?}", event);
+    }
+}
+
+fn info_on_game_clear_system(mut reader: EventReader<OnGameClear>) {
     for event in reader.iter() {
         info!("{:?}", event);
     }
