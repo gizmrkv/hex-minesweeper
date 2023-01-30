@@ -13,6 +13,7 @@ impl Plugin for ViewPlugin {
             .add_startup_system(setup_view)
             .add_startup_system(setup_game_over)
             .add_startup_system(setup_game_clear)
+            .add_startup_system(setup_sound)
             .add_system(recolor_tile_selected_system)
             .add_system(on_move_tile_system)
             .add_system(on_game_over_system)
@@ -197,6 +198,8 @@ fn on_move_tile_system(
     tile_ids: Res<TileIds>,
     game_board: Res<model::GameBoard>,
     config: Res<Config>,
+    audio: Res<Audio>,
+    sound: Res<ClickSound>,
 ) {
     for event in reader.iter() {
         let target = match event {
@@ -210,6 +213,8 @@ fn on_move_tile_system(
                 tile_text.sections[0].style.color = color;
             }
         }
+
+        audio.play(sound.0.clone());
     }
 }
 
@@ -321,6 +326,8 @@ fn on_game_over_system(
     mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
     mut game_over_text_query: Query<&mut Text, With<GameOverText>>,
     config: Res<Config>,
+    audio: Res<Audio>,
+    sound: Res<GameOverSound>,
 ) {
     for event in reader.iter() {
         game_over_query.single_mut().is_visible = true;
@@ -333,6 +340,7 @@ fn on_game_over_system(
                 game_over_text.sections[0].value = config.game_over_wrong_flag_text.clone();
             }
         }
+        audio.play(sound.0.clone());
     }
 }
 
@@ -404,10 +412,13 @@ fn setup_game_clear(mut commands: Commands, config: Res<Config>, asset_server: R
 fn on_game_clear_system(
     mut reader: EventReader<OnGameClear>,
     mut game_clear_query: Query<&mut Visibility, With<GameClearParent>>,
+    audio: Res<Audio>,
+    sound: Res<GameClearSound>,
 ) {
     for _ in reader.iter() {
         let mut game_clear = game_clear_query.single_mut();
         game_clear.is_visible = true;
+        audio.play(sound.0.clone());
     }
 }
 
@@ -442,4 +453,22 @@ fn on_undo_tile_system(
             }
         }
     }
+}
+
+#[derive(Resource)]
+struct ClickSound(Handle<AudioSource>);
+
+#[derive(Resource)]
+struct GameOverSound(Handle<AudioSource>);
+
+#[derive(Resource)]
+struct GameClearSound(Handle<AudioSource>);
+
+fn setup_sound(mut commands: Commands, asset_server: Res<AssetServer>, config: Res<Config>) {
+    let click_sound = asset_server.load(config.sound_click_path.clone());
+    commands.insert_resource(ClickSound(click_sound));
+    let game_over_sound = asset_server.load(config.sound_game_over_path.clone());
+    commands.insert_resource(GameOverSound(game_over_sound));
+    let game_clear_sound = asset_server.load(config.sound_game_clear_path.clone());
+    commands.insert_resource(GameClearSound(game_clear_sound));
 }

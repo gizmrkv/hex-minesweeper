@@ -57,6 +57,9 @@ fn main() {
             tile_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
             game_over_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
             game_clear_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
+            sound_click_path: "sound/click.ogg".to_string(),
+            sound_game_over_path: "sound/bomb.ogg".to_string(),
+            sound_game_clear_path: "sound/cym.ogg".to_string(),
         })
         .insert_resource(CursorWorldPosition {
             position: Vec2::ZERO,
@@ -117,6 +120,10 @@ pub struct Config {
     pub game_clear_text_below_position: Vec2,
     pub game_clear_text_below_size: f32,
     pub game_clear_text_below: String,
+
+    pub sound_click_path: String,
+    pub sound_game_over_path: String,
+    pub sound_game_clear_path: String,
 }
 
 fn setup(mut commands: Commands) {
