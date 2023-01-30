@@ -243,6 +243,11 @@ fn get_tile_text_and_color(
 #[derive(Component)]
 struct GameOverParent;
 
+#[derive(Component)]
+struct GameOverText;
+#[derive(Component)]
+struct GameOverTextBelow;
+
 fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Res<AssetServer>) {
     commands
         .spawn((
@@ -276,42 +281,58 @@ fn setup_game_over(mut commands: Commands, config: Res<Config>, asset_server: Re
                 font_size: config.game_over_text_size,
                 color: config.game_over_text_color,
             };
-            parent.spawn(Text2dBundle {
-                text: Text::from_section(config.game_over_text.clone(), game_over_text_style)
-                    .with_alignment(TextAlignment::CENTER),
-                transform: Transform::from_translation(Vec3::from((
-                    config.game_over_text_position,
-                    config.game_over_text_layer,
-                ))),
-                ..Default::default()
-            });
+            parent.spawn((
+                GameOverText,
+                Text2dBundle {
+                    text: Text::from_section("", game_over_text_style)
+                        .with_alignment(TextAlignment::CENTER),
+                    transform: Transform::from_translation(Vec3::from((
+                        config.game_over_text_position,
+                        config.game_over_text_layer,
+                    ))),
+                    ..Default::default()
+                },
+            ));
             let game_over_text_below_style = TextStyle {
                 font: game_over_text_font.clone(),
                 font_size: config.game_over_text_below_size,
                 color: config.game_over_text_below_color,
             };
-            parent.spawn(Text2dBundle {
-                text: Text::from_section(
-                    config.game_over_text_below.clone(),
-                    game_over_text_below_style,
-                )
-                .with_alignment(TextAlignment::CENTER),
-                transform: Transform::from_translation(Vec3::from((
-                    config.game_over_text_below_position,
-                    config.game_over_text_layer,
-                ))),
-                ..Default::default()
-            });
+            parent.spawn((
+                GameOverTextBelow,
+                Text2dBundle {
+                    text: Text::from_section(
+                        config.game_over_text_below.clone(),
+                        game_over_text_below_style,
+                    )
+                    .with_alignment(TextAlignment::CENTER),
+                    transform: Transform::from_translation(Vec3::from((
+                        config.game_over_text_below_position,
+                        config.game_over_text_layer,
+                    ))),
+                    ..Default::default()
+                },
+            ));
         });
 }
 
 fn on_game_over_system(
     mut reader: EventReader<OnGameOver>,
     mut game_over_query: Query<&mut Visibility, With<GameOverParent>>,
+    mut game_over_text_query: Query<&mut Text, With<GameOverText>>,
+    config: Res<Config>,
 ) {
-    for _ in reader.iter() {
-        let mut game_over = game_over_query.single_mut();
-        game_over.is_visible = true;
+    for event in reader.iter() {
+        game_over_query.single_mut().is_visible = true;
+        let mut game_over_text = game_over_text_query.single_mut();
+        match event {
+            OnGameOver::Open { target } => {
+                game_over_text.sections[0].value = config.game_over_wrong_open_text.clone();
+            }
+            OnGameOver::Flag { target } => {
+                game_over_text.sections[0].value = config.game_over_wrong_flag_text.clone();
+            }
+        }
     }
 }
 
@@ -386,9 +407,7 @@ fn on_game_clear_system(
 ) {
     for _ in reader.iter() {
         let mut game_clear = game_clear_query.single_mut();
-        println!("hoge");
         game_clear.is_visible = true;
-        println!("hoge");
     }
 }
 

@@ -200,7 +200,9 @@ fn on_try_open_tile_system(
                 open = true;
             }
             if tile_state.is_mine {
-                game_over_writer.send(events::OnGameOver);
+                game_over_writer.send(events::OnGameOver::Open {
+                    target: event.target,
+                });
             }
         }
         if open {
@@ -217,6 +219,7 @@ fn on_try_flag_tile_system(
     mut game_board: ResMut<GameBoard>,
     mut reader: EventReader<events::OnTryFlagTile>,
     mut writer: EventWriter<events::OnMoveTile>,
+    mut game_over_writer: EventWriter<events::OnGameOver>,
     mut game_clear_writer: EventWriter<events::OnGameClear>,
 ) {
     for event in reader.iter() {
@@ -225,6 +228,11 @@ fn on_try_flag_tile_system(
             if !tile_state.is_open && !tile_state.is_flag {
                 tile_state.is_flag = true;
                 flag = true;
+                if !tile_state.is_mine {
+                    game_over_writer.send(events::OnGameOver::Flag {
+                        target: event.target,
+                    });
+                }
             }
 
             if game_board.count_remaining_mines() == 0 {

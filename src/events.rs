@@ -27,7 +27,10 @@ pub enum OnUndoTile {
 }
 
 #[derive(Debug)]
-pub struct OnGameOver;
+pub enum OnGameOver {
+    Open { target: PointyHexGrid },
+    Flag { target: PointyHexGrid },
+}
 #[derive(Debug)]
 pub struct OnGameClear;
 
