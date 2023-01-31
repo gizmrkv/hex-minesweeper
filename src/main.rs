@@ -29,6 +29,7 @@ fn main() {
             game_over_text_layer: 1.1,
             game_clear_background_layer: 1.0,
             game_clear_text_layer: 1.1,
+            mines_hint_text_layer: 0.9,
             tile_color: Color::rgb(0.1, 0.1, 0.1),
             tile_edge_color: Color::rgb(0.8, 0.8, 0.8),
             tile_selected_color: Color::rgb(0.4, 0.4, 0.4),
@@ -60,6 +61,14 @@ fn main() {
             sound_click_path: "sound/click.ogg".to_string(),
             sound_game_over_path: "sound/bomb.ogg".to_string(),
             sound_game_clear_path: "sound/cym.ogg".to_string(),
+            mines_hint_text_position: Vec2 {
+                x: -620.0,
+                y: 350.0,
+            },
+            mines_hint_text: "Mines: {} (Remaining: {})".to_string(),
+            mines_hint_text_color: Color::rgb(0.9, 0.9, 0.9),
+            mines_hint_text_font_path: "fonts/FiraSans-Bold.ttf".to_string(),
+            mines_hint_text_size: 40.0,
         })
         .insert_resource(CursorWorldPosition {
             position: Vec2::ZERO,
@@ -86,6 +95,7 @@ pub struct Config {
     pub game_over_text_layer: f32,
     pub game_clear_background_layer: f32,
     pub game_clear_text_layer: f32,
+    pub mines_hint_text_layer: f32,
 
     pub tile_color: Color,
     pub tile_edge_color: Color,
@@ -124,10 +134,20 @@ pub struct Config {
     pub sound_click_path: String,
     pub sound_game_over_path: String,
     pub sound_game_clear_path: String,
+
+    pub mines_hint_text_color: Color,
+    pub mines_hint_text_position: Vec2,
+    pub mines_hint_text_size: f32,
+    pub mines_hint_text_font_path: String,
+    pub mines_hint_text: String,
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut windows: ResMut<Windows>) {
     commands.spawn(Camera2dBundle::default());
+
+    if let Some(window) = windows.get_primary_mut() {
+        window.set_resizable(false);
+    }
 }
 
 #[derive(Resource)]

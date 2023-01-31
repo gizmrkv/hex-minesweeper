@@ -14,12 +14,14 @@ impl Plugin for ViewPlugin {
             .add_startup_system(setup_game_over)
             .add_startup_system(setup_game_clear)
             .add_startup_system(setup_sound)
+            .add_startup_system(setup_mines_hint_text)
             .add_system(recolor_tile_selected_system)
             .add_system(on_move_tile_system)
             .add_system(on_game_over_system)
             .add_system(on_game_clear_system)
             .add_system(on_retry_system)
-            .add_system(on_undo_tile_system);
+            .add_system(on_undo_tile_system)
+            .add_system(on_flag_tile_system);
     }
 }
 
@@ -471,4 +473,56 @@ fn setup_sound(mut commands: Commands, asset_server: Res<AssetServer>, config: R
     commands.insert_resource(GameOverSound(game_over_sound));
     let game_clear_sound = asset_server.load(config.sound_game_clear_path.clone());
     commands.insert_resource(GameClearSound(game_clear_sound));
+}
+
+#[derive(Component)]
+struct MinesHintText;
+fn setup_mines_hint_text(
+    mut commands: Commands,
+    config: Res<Config>,
+    game_board: Res<model::GameBoard>,
+    asset_server: Res<AssetServer>,
+) {
+    let mines_hint_text_font = asset_server.load(&config.mines_hint_text_font_path);
+    let mines_hint_text_style = TextStyle {
+        font: mines_hint_text_font.clone(),
+        font_size: config.mines_hint_text_size,
+        color: config.mines_hint_text_color,
+    };
+    commands.spawn((
+        MinesHintText,
+        Text2dBundle {
+            text: Text::from_section(
+                format!(
+                    "Mines: {} (Remaining: {})",
+                    game_board.count_mines(),
+                    game_board.count_remaining_mines()
+                ),
+                mines_hint_text_style,
+            )
+            .with_alignment(TextAlignment::TOP_LEFT),
+            transform: Transform::from_translation(Vec3::from((
+                config.mines_hint_text_position,
+                config.mines_hint_text_layer,
+            ))),
+            ..Default::default()
+        },
+    ));
+}
+
+fn on_flag_tile_system(
+    mut reader: EventReader<OnMoveTile>,
+    mut query: Query<&mut Text, With<MinesHintText>>,
+    game_board: Res<model::GameBoard>,
+) {
+    for event in reader.iter() {
+        if let OnMoveTile::Flag { target } = event {
+            let mut text = query.single_mut();
+            text.sections[0].value = format!(
+                "Mines: {} (Remaining: {})",
+                game_board.count_mines(),
+                game_board.count_remaining_mines()
+            );
+        }
+    }
 }
