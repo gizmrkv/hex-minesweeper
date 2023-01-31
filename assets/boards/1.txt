@@ -1,7 +1,7 @@
 4
 ###M...
 ##M.O.M
-#.OM.MM
+#.OM.M.
 .MM..M.
 .MM..M#
 MOO.M##
