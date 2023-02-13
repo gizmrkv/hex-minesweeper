@@ -1,6 +1,7 @@
+use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
-use bevy::{prelude::*, ui::update};
 
+/// Plugin to get cursor position.
 pub struct Cursor2dPlugin;
 
 impl Plugin for Cursor2dPlugin {
@@ -10,12 +11,14 @@ impl Plugin for Cursor2dPlugin {
     }
 }
 
+/// Cursor position.
 #[derive(Resource, Default)]
 pub struct Cursor2d {
     pub screen_position: Vec2,
     pub world_position: Vec2,
 }
 
+/// Update screen and world coordinates of the cursor.
 fn update_cursor(
     windows: Res<Windows>,
     camera_query: Query<(&Camera, &GlobalTransform)>,
