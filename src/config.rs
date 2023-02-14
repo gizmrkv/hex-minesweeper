@@ -29,7 +29,7 @@ fn load_config(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.spawn(handle);
 }
 
-/// Enter Title from Setup.
+/// Enter Setup from LoadingConfig.
 fn enter_setup_state(mut app_state: ResMut<State<AppState>>, mut count: Local<usize>) {
     // Waiting to be able to get a config.
     if *count >= 1 {
