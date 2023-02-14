@@ -6,8 +6,6 @@ use bevy::{
 };
 use serde::Deserialize;
 
-use crate::AppState;
-
 /// Plugin to allow access to app config.
 pub struct ConfigPlugin;
 
@@ -16,10 +14,7 @@ impl Plugin for ConfigPlugin {
         app.add_asset::<Config>()
             .init_asset_loader::<ConfigLoader>()
             .add_startup_system(load_config)
-            .add_system_set(
-                SystemSet::on_update(AppState::LoadingConfig).with_system(enter_setup_state),
-            )
-            .add_system_set(SystemSet::on_exit(AppState::LoadingConfig).with_system(info_config));
+            .add_system(info_config);
     }
 }
 
@@ -29,26 +24,20 @@ fn load_config(asset_server: Res<AssetServer>, mut commands: Commands) {
     commands.spawn(handle);
 }
 
-/// Enter Setup from LoadingConfig.
-fn enter_setup_state(mut app_state: ResMut<State<AppState>>, mut count: Local<usize>) {
-    // Waiting to be able to get a config.
-    if *count >= 1 {
-        if let Ok(_) = app_state.set(AppState::Setup) {
-            *count = 0;
-        } else {
-            error!("failed to transition app state.");
-        }
-    }
-    *count += 1;
-}
-
 /// Inform config.
-fn info_config(config_query: Query<&Handle<Config>>, config_assets: ResMut<Assets<Config>>) {
-    let config_handle = config_query.single();
-    if let Some(config) = config_assets.get(config_handle) {
-        info!("{:#?}", config);
-    } else {
-        info!("No config.");
+fn info_config(
+    config_assets: ResMut<Assets<Config>>,
+    mut asset_event: EventReader<AssetEvent<Config>>,
+) {
+    for event in asset_event.iter() {
+        match event {
+            AssetEvent::Created { handle } => {
+                if let Some(config) = config_assets.get(handle) {
+                    info!("\n{:#?}", config);
+                }
+            }
+            _ => {}
+        }
     }
 }
 

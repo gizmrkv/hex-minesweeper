@@ -11,8 +11,6 @@ mod title;
 /// App state.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 enum AppState {
-    LoadingConfig,
-    Setup,
     Title,
 }
 
@@ -26,7 +24,7 @@ fn main() {
         .add_plugin(config::ConfigPlugin)
         .add_plugin(hexagonal_cursor::HexagonalCursorPlugin)
         .add_plugin(title::TitlePlugin)
-        .add_state(AppState::LoadingConfig)
+        .add_state(AppState::Title)
         .add_startup_system(spawn_camera)
         .run();
 }
