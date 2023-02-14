@@ -4,6 +4,7 @@ use bevy::prelude::*;
 mod config;
 mod cursor2d;
 mod hexagonal_coordinate;
+mod hexagonal_cursor;
 
 /// App state.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
@@ -20,6 +21,7 @@ fn main() {
         }))
         .add_plugin(cursor2d::Cursor2dPlugin)
         .add_plugin(config::ConfigPlugin)
+        .add_plugin(hexagonal_cursor::HexagonalCursorPlugin)
         .add_state(AppState::Setup)
         .add_startup_system(spawn_camera)
         .add_system_set(SystemSet::on_update(AppState::Setup).with_system(enter_title))

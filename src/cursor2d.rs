@@ -12,7 +12,7 @@ impl Plugin for Cursor2dPlugin {
 }
 
 /// Cursor position.
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Clone, Copy)]
 pub struct Cursor2d {
     pub screen_position: Vec2,
     pub world_position: Vec2,
