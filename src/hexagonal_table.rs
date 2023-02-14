@@ -10,6 +10,7 @@ where
     T: Default + Copy + Clone,
 {
     /// Create a HexagonalTable.
+    #[allow(dead_code)]
     pub fn new(hex_per_side: usize) -> Self {
         let hex_bound = 2 * hex_per_side - 1;
         Self {
@@ -20,16 +21,19 @@ where
     }
 
     /// Number of hexagons per side.
+    #[allow(dead_code)]
     pub fn hexagons_per_side(&self) -> usize {
         self.hex_per_side
     }
 
     /// Bound of hexagons.
+    #[allow(dead_code)]
     pub fn hexagons_bound(&self) -> usize {
         self.hex_bound
     }
 
     /// Get a hexagon reference.
+    #[allow(dead_code)]
     pub fn get(&self, hex: (i32, i32)) -> Option<&T> {
         if self.is_out_of_bound(hex) {
             None
@@ -40,7 +44,8 @@ where
     }
 
     /// Get a mutable hexagon reference.
-    pub fn get_mut(&self, hex: (i32, i32)) -> Option<&mut T> {
+    #[allow(dead_code)]
+    pub fn get_mut(&mut self, hex: (i32, i32)) -> Option<&mut T> {
         if self.is_out_of_bound(hex) {
             None
         } else {
@@ -50,6 +55,7 @@ where
     }
 
     /// Check if the given coordinates are outside the table.
+    #[allow(dead_code)]
     pub fn is_out_of_bound(&self, hex: (i32, i32)) -> bool {
         {
             hex.0 < 0
