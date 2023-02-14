@@ -25,6 +25,7 @@ fn main() {
         .add_plugin(cursor2d::Cursor2dPlugin)
         .add_plugin(config::ConfigPlugin)
         .add_plugin(hexagonal_cursor::HexagonalCursorPlugin)
+        .add_plugin(title::TitlePlugin)
         .add_state(AppState::LoadingConfig)
         .add_startup_system(spawn_camera)
         .run();
