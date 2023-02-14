@@ -5,6 +5,7 @@ mod config;
 mod cursor2d;
 mod hexagonal_coordinate;
 mod hexagonal_cursor;
+mod hexagonal_table;
 
 /// App state.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]

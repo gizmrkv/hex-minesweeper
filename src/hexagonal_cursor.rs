@@ -9,6 +9,7 @@ impl Plugin for HexagonalCursorPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<OnEnterHexagon>()
             .add_event::<OnExitHexagon>()
+            .add_system(update_hexagonal_cursor)
             .add_system(check_enter_or_exit_hexagon)
             .add_system(info_enter_or_exit_hexagon_event);
     }
@@ -16,7 +17,9 @@ impl Plugin for HexagonalCursorPlugin {
 
 /// Hexagonal cursor marker.
 #[derive(Default, Component)]
-pub struct HexagonalCursor;
+pub struct HexagonalCursor {
+    hexagon: (i32, i32),
+}
 
 /// Hexagonal cursor marker with origin transform.
 #[derive(Default, Bundle)]
@@ -35,6 +38,27 @@ pub struct OnEnterHexagon {
 pub struct OnExitHexagon {
     pub hexagonal_cursor_entity: Entity,
     pub grid_point: (i32, i32),
+}
+
+/// Update cursor hexagon.
+fn update_hexagonal_cursor(
+    mut hexagonal_cursor_query: Query<(&mut HexagonalCursor, &Transform)>,
+    cursor: Res<cursor2d::Cursor2d>,
+) {
+    let pos = cursor.world_position;
+    for (
+        mut hexagonal_cursor,
+        Transform {
+            translation,
+            scale,
+            rotation: _,
+        },
+    ) in hexagonal_cursor_query.iter_mut()
+    {
+        hexagonal_cursor.hexagon = snap_cartesian_to_hexagonal_grid(
+            ((pos + translation.truncate()) / scale.truncate()).into(),
+        );
+    }
 }
 
 /// Check OnEnterEvent and OnExitHexagon.
