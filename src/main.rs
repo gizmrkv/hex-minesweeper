@@ -8,10 +8,18 @@ mod hexagonal_cursor;
 mod hexagonal_table;
 mod title;
 
+use config::*;
+use cursor2d::*;
+use hexagonal_coordinate::*;
+use hexagonal_cursor::*;
+use hexagonal_table::*;
+use title::*;
+
 /// App state.
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 enum AppState {
     Title,
+    Menu,
 }
 
 fn main() {
@@ -20,10 +28,10 @@ fn main() {
             filter: "info,wgpu_core=warn,wgpu_hal=warn,mygame=debug".into(),
             level: bevy::log::Level::DEBUG,
         }))
-        .add_plugin(cursor2d::Cursor2dPlugin)
-        .add_plugin(config::ConfigPlugin)
-        .add_plugin(hexagonal_cursor::HexagonalCursorPlugin)
-        .add_plugin(title::TitlePlugin)
+        .add_plugin(Cursor2dPlugin)
+        .add_plugin(ConfigPlugin)
+        .add_plugin(HexagonalCursorPlugin)
+        .add_plugin(TitlePlugin)
         .add_state(AppState::Title)
         .add_startup_system(spawn_camera)
         .run();
