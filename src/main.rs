@@ -6,6 +6,8 @@ mod cursor2d;
 mod hexagonal_coordinate;
 mod hexagonal_cursor;
 mod hexagonal_table;
+mod menu;
+mod rule;
 mod title;
 
 use config::*;
@@ -13,6 +15,7 @@ use cursor2d::*;
 use hexagonal_coordinate::*;
 use hexagonal_cursor::*;
 use hexagonal_table::*;
+use menu::*;
 use title::*;
 
 /// App state.
@@ -32,6 +35,7 @@ fn main() {
         .add_plugin(ConfigPlugin)
         .add_plugin(HexagonalCursorPlugin)
         .add_plugin(TitlePlugin)
+        .add_plugin(MenuPlugin)
         .add_state(AppState::Title)
         .add_startup_system(spawn_camera)
         .run();

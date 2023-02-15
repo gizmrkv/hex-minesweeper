@@ -4,5 +4,11 @@ Config (
         green: 0.8,
         blue: 0.1,
         alpha: 0.0
-    ) 
+    ), 
+    menu_layout: {
+        (3, 3): StageRule (
+            hex_per_side: 4,
+            rule: Vanilla
+        )
+    }
 )

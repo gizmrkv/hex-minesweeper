@@ -1,3 +1,4 @@
+use crate::rule::*;
 use bevy::{
     asset::{AssetLoader, LoadContext, LoadedAsset},
     prelude::*,
@@ -5,6 +6,7 @@ use bevy::{
     utils::BoxedFuture,
 };
 use serde::Deserialize;
+use std::collections::HashMap;
 
 /// Plugin to allow access to app config.
 pub struct ConfigPlugin;
@@ -42,13 +44,14 @@ fn info_config(
 }
 
 /// app config.
-#[derive(Debug, Deserialize, TypeUuid, Default, Clone, Copy)]
+#[derive(Debug, Deserialize, TypeUuid, Default, Clone)]
 #[uuid = "39cadc56-aa9c-4543-8640-a018b74b5052"]
 pub struct Config {
     pub background_color: Color,
+    pub menu_layout: HashMap<(i32, i32), StageRule>,
 }
 
-/// app config loader.
+/// App config loader.
 #[derive(Default)]
 struct ConfigLoader;
 
@@ -59,8 +62,8 @@ impl AssetLoader for ConfigLoader {
         load_context: &'a mut LoadContext,
     ) -> BoxedFuture<'a, Result<(), bevy::asset::Error>> {
         Box::pin(async move {
-            let config = ron::de::from_bytes::<Config>(bytes)?;
-            load_context.set_default_asset(LoadedAsset::new(config));
+            let asset = ron::de::from_bytes::<Config>(bytes)?;
+            load_context.set_default_asset(LoadedAsset::new(asset));
             Ok(())
         })
     }
