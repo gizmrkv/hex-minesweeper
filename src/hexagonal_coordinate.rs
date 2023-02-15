@@ -1,6 +1,7 @@
+#![allow(dead_code)]
+
 /// Convert a point in the Cartesian coordinate system
 /// to a point in the hexagonal coordinate system.
-#[allow(dead_code)]
 pub fn to_hexagonal(point: (f32, f32)) -> (f32, f32) {
     (
         (3.0_f32.sqrt() * point.0 - point.1) / 3.0,
@@ -10,14 +11,12 @@ pub fn to_hexagonal(point: (f32, f32)) -> (f32, f32) {
 
 /// Convert a point in the hexagonal coordinate system
 /// to a point in the Cartesian coordinate system.
-#[allow(dead_code)]
 pub fn to_cartesian(point: (f32, f32)) -> (f32, f32) {
     (3.0_f32.sqrt() * (point.0 + 0.5 * point.1), 1.5 * point.1)
 }
 
 /// Convert a grid point in the hexagonal coordinate system
 /// to a point in the Cartesian coordinate system.
-#[allow(dead_code)]
 pub fn hexagonal_grid(point: (i32, i32)) -> (f32, f32) {
     (
         3.0_f32.sqrt() * 0.5 * (2 * point.0 + point.1) as f32,
@@ -27,7 +26,6 @@ pub fn hexagonal_grid(point: (i32, i32)) -> (f32, f32) {
 
 /// Snap a point in the hexagonal coordinate system
 /// to a grid point in the hexagonal coordinate system.
-#[allow(dead_code)]
 pub fn snap_hexagonal_to_hexagonal_grid(point: (f32, f32)) -> (i32, i32) {
     let (q, r, s) = (point.0, point.1, -point.0 - point.1);
     let [mut q_round, mut r_round, s_round] = [q.round(), r.round(), s.round()];
@@ -48,7 +46,6 @@ pub fn snap_hexagonal_to_hexagonal_grid(point: (f32, f32)) -> (i32, i32) {
 
 /// Snap a point in the Cartesian coordinate system
 /// to a grid point in the hexagonal coordinate system.
-#[allow(dead_code)]
 pub fn snap_cartesian_to_hexagonal_grid(point: (f32, f32)) -> (i32, i32) {
     snap_hexagonal_to_hexagonal_grid(to_hexagonal(point))
 }
